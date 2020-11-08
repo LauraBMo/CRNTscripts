@@ -12,14 +12,14 @@ end
 function findpivots(W)
     # return findfirstnonzero.(eachrow(W)) ## it works just for matrices, code below is more generic.
     # return mapslices(findfirstnonzero, W, dims=collect(2:ndims(W)))
-    return n->findfirstnonzero.(eachslice(W, dims=n))
+    return n -> findfirstnonzero.(eachslice(W, dims=n))
 end
 
 anynonzero(A) = any((!iszero).(A))
 
 function nonzeroslices(M)
     # return n->vec(mapslices(anynonzero, M, dims=deleteat!(collect(1:ndims(M)),n)))
-    return n->anynonzero.(eachslice(M, dims=n))
+    return n -> anynonzero.(eachslice(M, dims=n))
 end
 
 function dropzeroslices(M)
@@ -58,12 +58,12 @@ end
 
 # Matrix Y
 function kineticorder(net::AbstractMatrix)
-    return dropzerolines(stoichiometricsources(net)
+    return dropzeroslices(stoichiometricsources(net))
 end
 
 # Matrix N
 function stoichiometricmatrix(net::AbstractMatrix)
-    return dropzerolines(stoichiometrictargets(net) - stoichiometricsources(net))
+    return dropzeroslices(stoichiometrictargets(net) - stoichiometricsources(net))
 end
 
 function conservativelaws(N::AbstractMatrix{T}) where {T <: Integer}
@@ -124,7 +124,7 @@ function matrixtoMaple(io, M, name)
 end
 
 function xstoMaple(io, stoichiometricsources)
-    xs = (1:(size(stoichiometricsources, 1)))[nonzerorows(stoichiometricsources)]
+    xs = (1:(size(stoichiometricsources, 1)))[nonzeroslices(stoichiometricsources)(1)]
     write(io, "\n\nnxs := $(size(xs, 1)):\n")
     write(io, "xs := [seq(x[i], i = [")
     for x in xs[1:(end - 1)]
@@ -139,7 +139,7 @@ function xstoMaple(io, stoichiometricsources)
 end
 
 function kstoMaple(io, stoichiometricsources)
-    ks = (1:(size(stoichiometricsources, 2)))[nonzerocols(stoichiometricsources)]
+    ks = (1:(size(stoichiometricsources, 2)))[nonzeroslices(stoichiometricsources)(2)]
     write(io, "\n\nnks := $(size(ks, 1)):\n")
     write(io, "ks := [seq(k[i], i = [")
     for k in ks[1:(end - 1)]
@@ -159,7 +159,7 @@ end
 function WsystemtoMaple(io, nts, W)
     write(io, "\n\nSw := copy(S):\n")
     write(io, "Wx := (W.(Vector[column](xs))) - Vector[column]([seq(T[i], i = 1 .. $(nts))]):\n")
-    for (i, p) in enumerate(findpivots(W))
+    for (i, p) in enumerate(findpivots(W)(1))
         write(io, "Sw[$p] := Wx[$i]:\n")
     end
     write(io, "Sweq:= equfy(Sw):\n")
