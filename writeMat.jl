@@ -108,6 +108,7 @@ function toMaple(net, nxs, file::String)
         kstoMaple(io, stoichiometricsources(S))
         systemtoMaple(io)
         WsystemtoMaple(io, nts, W)
+        ConvexparamtoMaple(io)
     end
 end
 
@@ -164,4 +165,11 @@ function WsystemtoMaple(io, nts, W)
     write(io, "Sweq:= equfy(Sw):\n")
     write(io, "J := VectorCalculus[Jacobian](Sw, xs):\n")
     write(io, "DJ := (-1)^(Rank(N))*Determinant(J):\n")
+end
+
+## It needs Y and E be defined in Maple
+function ConvexparamtoMaple(io)
+    write(io, "\n\ndigL := Matrix(convert(E.(Vector[column]([seq(lambda[i], i=1..LinearAlgebra[ColumnDimension](E))])), Vector[row]), shape = diagonal):\n")
+    write(io, "digH := DiagonalMatrix([seq(h[i], i = 1..LinearAlgebra[ColumnDimension](LinearAlgebra[Transpose](Y)))]):\n")
+    write(io, "Jconv := N.digL.LinearAlgebra[Transpose](Y).digH:\n")
 end
