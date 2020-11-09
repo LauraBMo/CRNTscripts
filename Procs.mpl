@@ -1,3 +1,6 @@
+# Collection of small procs to works with CRN
+# No documentation provided, they are self explanatory.
+
 with(LinearAlgebra);
 with(ListTools);
 with(ArrayTools);
@@ -86,6 +89,7 @@ local param, freevars, DJparam, polyA, vecpolyA, negcffA, negexpA, negA, krels;
     return (krels, negcffA, negexpA, negA, collect(polyA, freevars, 'distributed', factor), vecpolyA, param);
 end proc:
 
+## Angelica, Elisenda
 StabilityMatrix := proc(M::Matrix)
 local p, i, j, d, pol, m, k;
 global H;
@@ -101,6 +105,7 @@ global H;
     print(["Lowest degree term", SignCoeffs(numer(H[m]), indets(numer(H[m]))), SignCoeffs(denom(H[m]), indets(denom(H[m])))]);
 end proc:
 
+## Angelica, Elisenda
 HurwitzDet := proc(n::integer)::list;
 local s, t, H, M, i, j, k;
     M := Matrix(n);
