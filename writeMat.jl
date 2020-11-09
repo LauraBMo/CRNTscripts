@@ -1,3 +1,14 @@
+
+###############################################################################
+#                       Script to generate Maple matrices and equations       #
+#                       To be use jointly with Procs.mpl                      #
+###############################################################################
+# To use it, create a file defining your networks, say networks.jl, and execute:
+#
+# julia networks.jl
+#
+# Examples of files defining networks are M1.jl, M2.jl and M1&2.jl
+
 using Nemo
 using Polymake
 import LinearAlgebra: I, dot
@@ -94,31 +105,11 @@ function cone_positivenullspace(N::AbstractMatrix{T}) where {T <: Integer}
     return T.(transpose(Array(d)))
 end
 
-function toMaple(net, nxs, file::String)
-    S = stoichiometriccoeffs(net, nxs) ## S may have zero rows and cols
-    N = stoichiometricmatrix(S) ## Has no zero row or col
-    nts, W = conservativelaws(N)
-    open(file, "w") do io
-        write(io, "read(\"ModelsMatricies/Procs.mpl\"):\n")
-        matrixtoMaple(io, kineticorder(S), "Y")
-        matrixtoMaple(io, N, "N")
-        matrixtoMaple(io, W, "W")
-        matrixtoMaple(io, cone_positivenullspace(N), "E")
-        xstoMaple(io, stoichiometricsources(S))
-        kstoMaple(io, stoichiometricsources(S))
-        systemtoMaple(io)
-        WsystemtoMaple(io, nts, W)
-        ConvexparamtoMaple(io)
-    end
-end
-
 function matrixtoMaple(io, M, name)
     write(io, "\n\n$(name) := Matrix$(size(M)):\n\n")
-    for r in 1:size(M, 1)
-        for c in 1:size(M, 2)
-            if M[r,c] != 0
-                write(io, "$(name)[$r,$c] := $(M[r,c]):\n")
-            end
+    for i in CartesianIndices(M)
+        if M[i] != 0
+            write(io, "$(name)[$(i[1]),$(i[2])] := $(M[i]):\n")
         end
     end
 end
@@ -173,3 +164,47 @@ function ConvexparamtoMaple(io)
     write(io, "digH := DiagonalMatrix([seq(h[i], i = 1..LinearAlgebra[ColumnDimension](LinearAlgebra[Transpose](Y)))]):\n")
     write(io, "Jconv := N.digL.LinearAlgebra[Transpose](Y).digH:\n")
 end
+
+macro matrixtoMaple(io, M)
+    return quote
+        matrixtoMaple($(esc(io)), $(esc(M)), $(esc((string(M)))))
+    end
+end
+
+function toMaple(net, nxs, file::String)
+    S = stoichiometriccoeffs(net, nxs) ## S may have zero rows and cols
+    N = stoichiometricmatrix(S) ## Has no zero row or col
+    nts, W = conservativelaws(N)
+    Y = kineticorder(S)
+    E = cone_positivenullspace(N)
+    open(file, "w") do io
+        write(io, "read(\"ModelsMatricies/Procs.mpl\"):\n")
+        @matrixtoMaple io Y
+        @matrixtoMaple io N
+        @matrixtoMaple io W
+        @matrixtoMaple io E
+        xstoMaple(io, stoichiometricsources(S))
+        kstoMaple(io, stoichiometricsources(S))
+        systemtoMaple(io)
+        WsystemtoMaple(io, nts, W)
+        ConvexparamtoMaple(io)
+    end
+end
+
+# function toMaple(net, nxs, file::String)
+#     S = stoichiometriccoeffs(net, nxs) ## S may have zero rows and cols
+#     N = stoichiometricmatrix(S) ## Has no zero row or col
+#     nts, W = conservativelaws(N)
+#     open(file, "w") do io
+#         write(io, "read(\"ModelsMatricies/Procs.mpl\"):\n")
+#         matrixtoMaple(io, kineticorder(S), "Y")
+#         matrixtoMaple(io, N, "N")
+#         matrixtoMaple(io, W, "W")
+#         matrixtoMaple(io, cone_positivenullspace(N), "E")
+#         xstoMaple(io, stoichiometricsources(S))
+#         kstoMaple(io, stoichiometricsources(S))
+#         systemtoMaple(io)
+#         WsystemtoMaple(io, nts, W)
+#         ConvexparamtoMaple(io)
+#     end
+# end
